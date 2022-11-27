@@ -3,7 +3,7 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 from api import models as api_models
-from api.controllers import PlaybackController
+from api.controllers import UserController
 
 class UserConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -18,6 +18,15 @@ class UserConsumer(AsyncWebsocketConsumer):
         )
 
         await self.accept()
+
+        # request = json.dumps({
+        #     "type": "request",
+        #     "data": {
+        #         "action": "join_party",
+        #         "party_code": "ohuiwe"
+        #     }
+        # })
+        # await self.receive(request)
 
         user.userprofile.go_online()
 
@@ -35,14 +44,14 @@ class UserConsumer(AsyncWebsocketConsumer):
         message = json.loads(text_data)
         user = self.get_user()
 
-        response_message = await PlaybackController(user).handle_message(message)
+        response_message = await UserController(user).handle_message(message)
 
         await self.group_send(response_message)
     
     async def response(self, message):
         user = self.get_user()
 
-        response_message = await PlaybackController(user).handle_message(message)
+        response_message = await UserController(user).handle_message(message)
 
         await self.self_send(response_message)
 

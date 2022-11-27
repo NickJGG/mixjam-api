@@ -1,8 +1,10 @@
 from api import SpotifyClient
 
-class PlaybackController:
+from .base_controller import BaseController
+class PlaybackController(BaseController):
     def __init__(self, user):
-        self.user = user
+        super().__init__(user)
+
         self.spotify = SpotifyClient(user)
         self.spotify_actions = {
             'get_state': self.spotify.get_state,
@@ -16,12 +18,6 @@ class PlaybackController:
             'seek': self.spotify.seek,
             "song_end": self.spotify.song_end
         }
-    
-    async def handle_message(self, message):
-        if message["type"] == "request":
-            return await self.handle_request(message["data"])
-        
-        return await self.handle_response(message["data"])
     
     async def handle_request(self, message):
         print(f"REQUEST: { message }")
@@ -40,9 +36,9 @@ class PlaybackController:
         action = message.get("action")
 
         func = self.spotify_actions[action]
-        await func(message)
+        action_result = await func(message)
 
-        playback_state = await self.spotify.get_state(message)
+        playback_state = await self.spotify.get_state(action_result)
 
         try:
             data["playback"] = playback_state.json()
@@ -50,9 +46,3 @@ class PlaybackController:
             pass
 
         return self.create_message(data)
-
-    def create_message(self, data):
-        return {
-            "type": "response",
-            "data": data
-        }

@@ -3,7 +3,7 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 from api import models as api_models
-from api.controllers import PlaybackController
+from api.controllers import PartyController
 
 class PartyConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -13,6 +13,7 @@ class PartyConsumer(AsyncWebsocketConsumer):
         self.group_name = f"party_{ self.room_name }"
 
         party = self.get_party()
+        user = self.get_user()
 
         await self.channel_layer.group_add(
             self.group_name,
@@ -21,7 +22,28 @@ class PartyConsumer(AsyncWebsocketConsumer):
 
         await self.accept()
 
+        request = json.dumps({
+            "type": "request",
+            "data": {
+                "action": "join"
+            }
+        })
+        await self.receive(request)
+
     async def disconnect(self, close_code):
+        party = self.get_party()
+        user = self.get_user()
+
+        party.leave(user)
+
+        request = json.dumps({
+            "type": "request",
+            "data": {
+                "action": "leave"
+            }
+        })
+        await self.receive(request)
+
         await self.channel_layer.group_discard(
             self.group_name,
             self.channel_name
@@ -30,15 +52,17 @@ class PartyConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         message = json.loads(text_data)
         user = self.get_user()
+        party = self.get_party()
 
-        response_message = await PlaybackController(user).handle_message(message)
+        response_message = await PartyController(user, party).handle_message(message)
 
         await self.group_send(response_message)
     
     async def response(self, message):
         user = self.get_user()
+        party = self.get_party()
 
-        response_message = await PlaybackController(user).handle_message(message)
+        response_message = await PartyController(user, party).handle_message(message)
 
         await self.self_send(response_message)
 

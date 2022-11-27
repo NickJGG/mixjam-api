@@ -22,6 +22,14 @@ class PartyMode(models.Model):
         (CLOSED, "Closed"),
     ]
 
+class NotificationAction(models.Model):
+    ACCEPT = "accept"
+    IGNORE = "ignore"
+
+class NotificationType(models.Model):
+    FRIEND_REQUEST = "friendrequest"
+    PARTY_INVITE = "partyinvite"
+
 class RoomMode(models.Model):
     PUBLIC = "public"
     PRIVATE = "private"
@@ -35,11 +43,12 @@ class RoomMode(models.Model):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete = models.CASCADE)
+    spotify_username = models.CharField(max_length = 50, blank = True, null = True)
     tag_line = models.CharField(max_length = 50, default = "Jammer")
-    access_token = models.CharField(max_length = 200, blank = True, null = True)
-    refresh_token = models.CharField(max_length = 200, blank = True, null = True)
+    access_token = models.CharField(max_length = 210, blank = True, null = True)
+    refresh_token = models.CharField(max_length = 210, blank = True, null = True)
     authorized = models.BooleanField(default = False)
-    most_recent_room = models.ForeignKey("Room", blank = True, null = True, on_delete = models.SET_NULL, related_name = "most_recent_name")
+    party = models.ForeignKey("Party", blank = True, null = True, on_delete = models.SET_NULL, related_name = "user_party")
     friends = models.ManyToManyField(User, blank = True, related_name = "friends")
 
     color = models.CharField(max_length = 6, default = "1c71ca")
@@ -71,6 +80,7 @@ class Party(models.Model):
     creator = models.ForeignKey(User, on_delete = models.CASCADE)
 
     users = models.ManyToManyField(User, blank = True, related_name = "party_users")
+    allowed_users = models.ManyToManyField(User, blank = True, related_name = "party_allowed_users")
 
     invite_code = models.CharField(max_length = 6, null = True, blank = True)
     invite_time = models.DateTimeField(blank = True, null = True)
@@ -82,6 +92,76 @@ class Party(models.Model):
     playing = models.BooleanField(default = False, blank = True)
 
     time_created = models.DateTimeField(auto_now_add = True, null = True)
+
+    def join(self, user):
+        if not self.user_can_join(user):
+            return False
+        
+        self.users.add(user)
+        self.save()
+
+        return True
+    
+    def leave(self, user):
+        print(self.users.all())
+        self.users.remove(user)
+        self.save()
+        print(self.users.all())
+
+        return True
+
+    def save(self, *args, **kwargs):
+        print("save")
+        super(Party, self).save(*args, **kwargs)
+
+    def user_can_join(self, user):
+        return True
+
+class Notification(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sender")
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="receiver")
+
+    time_sent = models.DateTimeField(auto_now_add=True)
+
+class PartyInvite(models.Model):
+    notification = models.ForeignKey("Notification", on_delete=models.CASCADE)
+    party = models.ForeignKey("Party", on_delete=models.CASCADE)
+
+    def get_available_actions(self):
+        return [NotificationAction.ACCEPT, NotificationAction.IGNORE]
+
+    def get_type(self):
+        return NotificationType.PARTY_INVITE
+
+    def can_perform_action(self, action):
+        if action == NotificationAction.IGNORE:
+            return True, ""
+        
+        if self.party.mode == PartyMode.PUBLIC:
+            return True, ""
+        
+        return True, ""
+    
+    def perform_action(self, action):
+        can_perform_action, message = self.can_perform_action(action)
+
+        if not can_perform_action:
+            return {
+                "success": False,
+                "message": f"Unable to { action }: { message }"
+            }
+        
+        print(action)
+
+        if action == NotificationAction.ACCEPT:
+            self.party.allowed_users.add(self.notification.receiver)
+            print(self.party.allowed_users.all())
+            self.party.save()
+        
+        return {
+            "success": True
+        }
+
 
 class Room(models.Model):
     code = models.CharField(primary_key = True, max_length = 30, default = "default")
