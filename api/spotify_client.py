@@ -4,6 +4,7 @@ import json
 import requests_async
 import requests
 
+import math
 import time
 
 ENDPOINTS = {
@@ -21,17 +22,22 @@ ENDPOINTS = {
     "repeat": "https://api.spotify.com/v1/me/player/repeat",
     "song": "https://api.spotify.com/v1/me/player/currently-playing",
     "recently_played": "https://api.spotify.com/v1/me/player/recently-played",
-    "saved_tracks": "https://api.spotify.com/v1/me/tracks",
+    "add_queue": "https://api.spotify.com/v1/me/player/queue",
 
     "profile": "https://api.spotify.com/v1/me/",
     "current_user_playlists": "https://api.spotify.com/v1/me/playlists",
     "top_items": "https://api.spotify.com/v1/me/top/{type}",
 
     "playlist": "https://api.spotify.com/v1/playlists/",
+    
+    "album": "https://api.spotify.com/v1/albums/{album_id}",
+
     "artists": "https://api.spotify.com/v1/artists/",
+    "artists_similar": "https://api.spotify.com/v1/artists/{artist_id}/related-artists",
+    "artists_top_tracks": "https://api.spotify.com/v1/artists/{artist_id}/top-tracks",
+    "artists_albums": "https://api.spotify.com/v1/artists/{artist_id}/albums",
 
     "recommendations": "https://api.spotify.com/v1/recommendations/",
-    "related_artists": "https://api.spotify.com/v1/artists/{artist_id}/related-artists",
     "new_releases": "https://api.spotify.com/v1/browse/new-releases",
     "search": "https://api.spotify.com/v1/search",
 
@@ -51,6 +57,10 @@ ENDPOINTS = {
 CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
 
+class RecommendationLength:
+    SHORT_TERM = "short_term"
+    LONG_TERM = "long_term"
+
 class SpotifyClient:
     def __init__(self, user):
         self.user = user
@@ -65,22 +75,37 @@ class SpotifyClient:
         pass
 
     async def play_track(self, data):
-        put_data = {
-            "uris": [data["track_uri"]]
+        post_params = {
+            "uri": data["track_uri"]
         }
 
-        return await self.async_put(ENDPOINTS["play"], data = put_data)
+        resp = await self.async_post(ENDPOINTS["add_queue"], params=post_params)
+
+        return await self.next({})
 
     async def play_context(self, data):
         put_data = {}
 
-        if "context_uri" in data:
+        context_uri = data.get("context_uri", None)
+        offset = data.get("offset", None)
+        position_ms = data.get("position_ms", None)
+
+        if context_uri is not None:
             put_data["context_uri"] = data["context_uri"]
-        
-        if "offset" in data:
+
+        if offset is not None:
             put_data["position"] = data["offset"]
 
-        return await self.async_put(ENDPOINTS["play"], data=put_data)
+        if position_ms is None:
+            response = await self.async_put(ENDPOINTS["play"], data=put_data)
+        else:
+            response = self.put(ENDPOINTS["play"], data=put_data)
+
+            await self.async_seek({
+                "position_ms": position_ms
+            })
+
+        return response
 
     async def previous(self, data):
         return await self.async_post(ENDPOINTS['previous'])
@@ -88,12 +113,26 @@ class SpotifyClient:
     async def next(self, data):
         return await self.async_post(ENDPOINTS['next'])
 
-    async def seek(self, data):
+    def seek(self, data):
         put_params = {
-            'position_ms': data["progress_ms"]
+            "position_ms": data["position_ms"]
+        }
+
+        return self.put(ENDPOINTS['seek'], params=put_params)
+
+    async def async_seek(self, data):
+        put_params = {
+            "position_ms": data["position_ms"]
         }
 
         return await self.async_put(ENDPOINTS['seek'], params=put_params)
+
+    async def add_queue(self, data):
+        post_params = {
+            "uri": data["track_uri"]
+        }
+
+        return await self.async_post(ENDPOINTS["add_queue"], params=post_params)
 
     async def song_end(self, data):
         return await self.get_state(data)
@@ -126,10 +165,31 @@ class SpotifyClient:
                 endpoint = endpoint.format(playlist_id=id)
                 
                 save_checks.append(self.get(endpoint, params = {
-                    "ids": self.user.userprofile.spotify_username
+                    "ids": self.user.profile.spotify_username
                 }))
 
         return self.get(endpoint, params=data)
+
+    def get_album(self, data):
+        album_id = data.pop("album_id")
+
+        return self.get(ENDPOINTS["album"].format(album_id=album_id), params=data)
+
+    def get_artists_similar(self, data):
+        artist_id = data.pop("artist_id")
+
+        return self.get(ENDPOINTS["artists_similar"].format(artist_id=artist_id), params=data)
+    
+    def get_artists_top_tracks(self, data):
+        artist_id = data.pop("artist_id")
+        data["market"] = "US"
+
+        return self.get(ENDPOINTS["artists_top_tracks"].format(artist_id=artist_id), params=data)
+    
+    def get_artists_albums(self, data):
+        artist_id = data.pop("artist_id")
+
+        return self.get(ENDPOINTS["artists_albums"].format(artist_id=artist_id), params=data)
 
     def get_top_items(self, data):
         type = data.pop("type")
@@ -142,19 +202,32 @@ class SpotifyClient:
     def get_search_results(self, data):
         return self.get(ENDPOINTS["search"], params=data)
 
-    def get_related_artists(self, data):
-        artist_id = data.pop("artist_id")
+    def get_artists(self, data):
+        ids = data.pop("ids")
+        
+        data["ids"] = ",".join(ids)
 
-        return self.get(ENDPOINTS['related_artists'].format(artist_id=artist_id), params=data)
+        return self.get(ENDPOINTS['artists'], params=data)
 
     def get_recommendations(self, data):
-        top_tracks = self.get_top_items({
+        max_tracks = 5
+        # num_short_term_tracks = math.floor(max_tracks / 2)
+        num_short_term_tracks = 2
+        num_medium_term_tracks = max_tracks - num_short_term_tracks
+
+        short_term_tracks = self.get_top_items({
             "type": "tracks",
-            "limit": 5,
+            "limit": num_short_term_tracks,
             "time_range": "short_term"
         }).json()["items"]
 
-        ids = list(map(lambda track: track["id"], top_tracks))
+        medium_term_tracks = self.get_top_items({
+            "type": "tracks",
+            "limit": num_medium_term_tracks,
+            "time_range": "medium_term"
+        }).json()["items"]
+
+        ids = list(map(lambda track: track["id"], short_term_tracks + medium_term_tracks))
         ids = ",".join(ids)
 
         data["seed_tracks"] = ids
@@ -166,7 +239,7 @@ class SpotifyClient:
 
         data["type"] = type[:-1]
 
-        return self.get(ENDPOINTS[f"saved_{ type }"], params=data)
+        return self.get(ENDPOINTS[f"saved_{ type }"].format(user_id=self.user.profile.spotify_username), params=data)
 
     def get_new_releases(self, data):
         return self.get(ENDPOINTS['new_releases'], params = data)
@@ -174,23 +247,25 @@ class SpotifyClient:
     def get_profile(self):
         return self.get(ENDPOINTS["profile"])
 
+    #region AUTH
+
     async def async_refresh_token(self):
         response = await requests_async.post(ENDPOINTS["refresh"], data = {
             "grant_type": "refresh_token",
-            "refresh_token": self.user.userprofile.refresh_token
+            "refresh_token": self.user.profile.refresh_token
         }, headers = self.get_token_headers())
 
         r_json = response.json()
 
         if response.status_code < 400:
-            self.user.userprofile.access_token = r_json["access_token"]
-            self.user.userprofile.authorized = True
+            self.user.profile.access_token = r_json["access_token"]
+            self.user.profile.authorized = True
         else:
-            self.user.userprofile.authorized = False
+            self.user.profile.authorized = False
         
-        self.user.userprofile.save()
+        self.user.profile.save()
 
-        return self.user.userprofile.authorized
+        return self.user.profile.authorized
     
     def get_client_credentials(self):
         if not CLIENT_SECRET or not CLIENT_ID:
@@ -210,9 +285,13 @@ class SpotifyClient:
 
     def get_headers(self):
         return {
-            "Authorization": f"Bearer {self.user.userprofile.access_token}"
+            "Authorization": f"Bearer {self.user.profile.access_token}"
         }
     
+    #endregion
+
+    #region HTTP
+
     async def async_get(self, endpoint, params = {}):
         response = await requests_async.get(endpoint, params = params, headers = self.get_headers())
 
@@ -247,16 +326,16 @@ class SpotifyClient:
 
         return response
 
-    async def async_post(self, endpoint, data = {}):
+    async def async_post(self, endpoint, data = {}, params = {}):
         data = json.dumps(data)
 
-        response = await requests_async.post(endpoint, data = data, headers = self.get_headers())
+        response = await requests_async.post(endpoint, data = data, params = params, headers = self.get_headers())
 
         if response.status_code == 401:
             authorized = await self.async_refresh_token()
 
             if authorized:
-                response = await requests_async.post(endpoint, data = data, headers = self.get_headers())
+                response = await requests_async.post(endpoint, data = data, params = params, headers = self.get_headers())
             else:
                 response = {
                     'error': 'unauthorized',
@@ -334,3 +413,5 @@ class SpotifyClient:
                 }
 
         return response
+
+    #endregion

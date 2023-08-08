@@ -19,7 +19,6 @@ class NewReleasesViewSet(APIView):
             "limit": limit
         }).json()["albums"]["items"]
 
-        ids = list(map(lambda release: release["id"], releases))
-        releases = helpers.add_saved_status_to_collection(client, releases, ids, "track")
+        releases = helpers.add_saved_status_to_collection(client, releases, "track")
 
         return Response(releases)

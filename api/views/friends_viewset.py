@@ -14,6 +14,6 @@ class FriendsViewSet(viewsets.ModelViewSet):
         user = User.objects.filter(id = self.request.user.id)
 
         if user.exists():
-            return user.first().userprofile.friends
+            return user.first().profile.friends
 
         return None

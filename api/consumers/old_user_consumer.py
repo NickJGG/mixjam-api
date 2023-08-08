@@ -19,14 +19,14 @@ class OldUserConsumer(AsyncWebsocketConsumer):
 
         await self.accept()
 
-        user.userprofile.go_online()
+        user.profile.go_online()
 
         await self.playback({
             'action': 'get_devices'
         })
 
-        if user.userprofile.online_count == 1:
-            for friend in user.userprofile.friends.all():
+        if user.profile.online_count == 1:
+            for friend in user.profile.friends.all():
                 active_room = Room.objects.filter(users = friend, active_users = friend)
 
                 if active_room.exists():
@@ -58,10 +58,10 @@ class OldUserConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         user = self.get_user()
 
-        user.userprofile.go_offline()
+        user.profile.go_offline()
 
-        if user.userprofile.online_count == 0:
-            for friend in user.userprofile.friends.all():
+        if user.profile.online_count == 0:
+            for friend in user.profile.friends.all():
                 active_room = Room.objects.filter(users = friend, active_users = friend)
 
                 if active_room.exists():

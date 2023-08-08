@@ -11,6 +11,9 @@ class UserController(BaseController):
         self.actions = {
             "join_party": self.join_party
         }
+        self.allowed_types = [
+            "notification"
+        ]
 
     async def handle_request(self, message):
         # print(f"REQUEST: { message }")
@@ -31,14 +34,24 @@ class UserController(BaseController):
         
         action = message.get("action")
 
-        if action not in self.actions:
-            return await PlaybackController(self.user).handle_response(message)
+        print(message)
 
-        func = self.actions[action]
-        data = {
-            **data,
-            **await func(message)
-        }
+        if action is None:
+            type =  message.get("type")
+
+            if type in self.allowed_types:
+                data = {
+                    **data,
+                    **message
+                }
+        elif action in self.actions:
+            func = self.actions[action]
+            data = {
+                **data,
+                **await func(message)
+            }
+        else:
+            return await PlaybackController(self.user).handle_response(message)
 
         print(f"RESPONSE: { data }")
 

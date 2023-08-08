@@ -3,20 +3,20 @@ from rest_framework.authtoken.models import Token
 
 from api.models import User
 
-from .userprofile_serializer import UserProfileSerializer
+from .profile_serializer import ProfileSerializer
 
 class UserSerializer(serializers.ModelSerializer):
-    userprofile = UserProfileSerializer()
+    profile = ProfileSerializer()
 
     class Meta:
         model = User
-        fields = ["id", "username", "password", "userprofile"]
+        fields = ["id", "username", "password", "profile"]
         extra_kwargs = {
             "password": {
                 "write_only": True,
                 "required": True
             },
-            "userprofile": {
+            "profile": {
                 "read_only": True
             }
         }

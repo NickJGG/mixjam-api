@@ -7,18 +7,13 @@ from api.helpers import get_notifications
 from api.models import User
 from api.serializers import UserSerializer
 
-class UserViewSet(APIView):
-    serializer_class = UserSerializer
+class SelfViewSet(APIView):
     authentication_classes = [TokenAuthentication, ]
     permission_classes = [IsAuthenticated, ]
 
-    def get(self, request, username):
-        user = User.objects.filter(username=username)
-        
-        if not user.exists():
-            return Response({ "success": False })
-    
-        user = UserSerializer(user[0]).data
+    def get(self, request):
+        user = UserSerializer(self.request.user).data
+        user["notifications"] = get_notifications(self.request.user)
 
         return Response({
             "user": user

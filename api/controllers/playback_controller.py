@@ -1,6 +1,32 @@
 from api import SpotifyClient
 
 from .base_controller import BaseController
+
+class PlaybackAction:
+    PLAY = "play"
+    PLAY_DIRECT = "play_direct"
+    PLAY_CONTEXT = "play_context"
+    PLAY_TRACK = "play_track"
+    PAUSE = "pause"
+    PREVIOUS = "previous"
+    NEXT = "next"
+    SEEK = "seek"
+    SONG_END = "song_end"
+    ADD_QUEUE = "add_queue"
+
+    ALL = [
+        PLAY,
+        PLAY_DIRECT,
+        PLAY_CONTEXT,
+        PLAY_TRACK,
+        PAUSE,
+        PREVIOUS,
+        NEXT,
+        SEEK,
+        SONG_END,
+        ADD_QUEUE
+    ]
+
 class PlaybackController(BaseController):
     def __init__(self, user):
         super().__init__(user)
@@ -16,11 +42,12 @@ class PlaybackController(BaseController):
             'previous': self.spotify.previous,
             'next': self.spotify.next,
             'seek': self.spotify.seek,
-            "song_end": self.spotify.song_end
+            "song_end": self.spotify.song_end,
+            "add_queue": self.spotify.add_queue,
         }
     
     async def handle_request(self, message):
-        print(f"REQUEST: { message }")
+        print(f"[Playback] Request: { message }")
 
         data = {
             **message
@@ -29,7 +56,7 @@ class PlaybackController(BaseController):
         return self.create_message(data)
     
     async def handle_response(self, message):
-        print(f"RESPONSE: { message }")
+        print(f"[Playback] Response: { message }")
 
         data = {}
 

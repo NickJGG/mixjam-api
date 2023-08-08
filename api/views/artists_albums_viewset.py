@@ -6,21 +6,20 @@ from rest_framework.response import Response
 from api import helpers
 from api.spotify_client import SpotifyClient
 
-class TopArtistsViewSet(APIView):
+class ArtistsAlbumsViewset(APIView):
     authentication_classes = [TokenAuthentication, ]
     permission_classes = [IsAuthenticated, ]
 
-    def get(self, request, format = None, *args, **kwargs):
-        limit = int(request.query_params.get("limit", 6))
-
+    def get(self, request, artist_id):
         client = SpotifyClient(request.user)
 
-        artists = client.get_top_items({
-            "type": "artists",
-            "limit": limit,
-            "time_range": "short_term"
+        albums = client.get_artists_albums({
+            "artist_id": artist_id
         }).json()["items"]
 
-        artists = helpers.add_saved_status_to_collection(client, artists, "artist")
+        albums = list(filter(lambda album: album["album_type"] == "album", albums))
+
+        albums = helpers.add_saved_status_to_collection(client, albums, "artist")
+        albums = helpers.add_artists_to_collection(client, albums)
         
-        return Response(artists)
+        return Response(albums)

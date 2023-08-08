@@ -199,8 +199,8 @@ def get_recommendations(user, seed_label, seed, limit = 20):
 
 @database_sync_to_async
 def set_user_picture(user, url):
-    user.userprofile.picture = url
-    user.userprofile.save()
+    user.profile.picture = url
+    user.profile.save()
 
 def select_device(user, device_id):
     return put(user, endpoints['player'], data = {
@@ -334,7 +334,7 @@ async def get_playback(user):
 
 def get_headers(user):
     return {
-        "Authorization": f"Bearer {user.userprofile.access_token}"
+        "Authorization": f"Bearer {user.profile.access_token}"
     }
 
 def get_token_headers():
@@ -356,38 +356,38 @@ def get_client_credentials():
 async def async_refresh_token(user):
     response = await requests_async.post(endpoints['refresh'], data = {
         'grant_type': 'refresh_token',
-        'refresh_token': user.userprofile.refresh_token
+        'refresh_token': user.profile.refresh_token
     }, headers = get_token_headers())
 
     r_json = response.json()
 
     if response.status_code < 400:
-        user.userprofile.access_token = r_json['access_token']
-        user.userprofile.authorized = True
+        user.profile.access_token = r_json['access_token']
+        user.profile.authorized = True
     else:
-        user.userprofile.authorized = False
+        user.profile.authorized = False
     
-    user.userprofile.save()
+    user.profile.save()
 
-    return user.userprofile.authorized
+    return user.profile.authorized
 
 def refresh_token(user):
     response = requests.post(endpoints['refresh'], data = {
         'grant_type': 'refresh_token',
-        'refresh_token': user.userprofile.refresh_token
+        'refresh_token': user.profile.refresh_token
     }, headers = get_token_headers())
 
     r_json = response.json()
 
     if response.status_code < 400:
-        user.userprofile.access_token = r_json['access_token']
-        user.userprofile.authorized = True
+        user.profile.access_token = r_json['access_token']
+        user.profile.authorized = True
     else:
-        user.userprofile.authorized = False
+        user.profile.authorized = False
     
-    user.userprofile.save()
+    user.profile.save()
 
-    return user.userprofile.authorized
+    return user.profile.authorized
 
 # endregion
 

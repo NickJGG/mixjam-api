@@ -5,6 +5,8 @@ from api.models import User
 from .friend_profile_serializer import FriendProfileSerializer
 
 class FriendSerializer(serializers.ModelSerializer):
+    profile = FriendProfileSerializer()
+
     class Meta:
         model = User
-        fields = ["username"]
+        fields = ["id", "username", "profile"]

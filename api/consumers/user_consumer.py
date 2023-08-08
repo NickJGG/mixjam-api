@@ -28,12 +28,12 @@ class UserConsumer(AsyncWebsocketConsumer):
         # })
         # await self.receive(request)
 
-        user.userprofile.go_online()
+        user.profile.go_online()
 
     async def disconnect(self, close_code):
         user = self.get_user()
 
-        user.userprofile.go_offline()
+        user.profile.go_offline()
 
         await self.channel_layer.group_discard(
             self.group_name,

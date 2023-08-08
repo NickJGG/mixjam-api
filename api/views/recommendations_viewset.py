@@ -19,8 +19,8 @@ class RecommendationsViewSet(APIView):
             "limit": limit
         }).json()["tracks"]
 
-        ids = list(map(lambda track: track["id"], tracks))
-        tracks = helpers.add_saved_status_to_collection(client, tracks, ids, "track")
+        tracks = helpers.add_saved_status_to_collection(client, tracks, "track")
+        tracks = helpers.add_artists_to_collection(client, tracks)
 
         # if type == 'tracks':
         #     track_ids = []
@@ -39,7 +39,7 @@ class RecommendationsViewSet(APIView):
         #     rec_artists = []
 
         #     for artist_id in artist_ids:
-        #         rec = spotify.get_related_artists(request.user, artist_id).json()
+        #         rec = spotify.get_artists_similar(request.user, artist_id).json()
 
         #         for artist in rec['artists']:
         #             if artist not in rec_artists:

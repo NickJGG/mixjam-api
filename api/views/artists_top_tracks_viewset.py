@@ -6,21 +6,18 @@ from rest_framework.response import Response
 from api import helpers
 from api.spotify_client import SpotifyClient
 
-class RecentTracksViewSet(APIView):
+class ArtistsTopTracksViewset(APIView):
     authentication_classes = [TokenAuthentication, ]
     permission_classes = [IsAuthenticated, ]
 
-    def get(self, request, format = None, *args, **kwargs):
-        limit = int(request.query_params.get("limit", 6))
-
+    def get(self, request, artist_id):
         client = SpotifyClient(request.user)
 
-        tracks = client.get_recent_tracks({
-            "limit": limit
-        }).json()["items"]
+        tracks = client.get_artists_top_tracks({
+            "artist_id": artist_id
+        }).json()["tracks"]
 
-        tracks = list(map(lambda item: item["track"], tracks))
-        tracks = helpers.add_saved_status_to_collection(client, tracks, "track")
+        tracks = helpers.add_saved_status_to_collection(client, tracks, "artist")
         tracks = helpers.add_artists_to_collection(client, tracks)
-
+        
         return Response(tracks)

@@ -1,13 +1,13 @@
 from rest_framework import serializers
 
-from api.models import UserProfile
+from api.models import Profile
 
 from .friend_serializer import FriendSerializer
 
-class UserProfileSerializer(serializers.ModelSerializer):
+class ProfileSerializer(serializers.ModelSerializer):
     friends = FriendSerializer(many=True)
 
     class Meta:
-        model = UserProfile
+        model = Profile
         fields = ["tag_line", "color", "picture", "friends"]
         extra_kwargs = {}

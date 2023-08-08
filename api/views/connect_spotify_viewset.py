@@ -41,13 +41,13 @@ class ConnectSpotify(APIView):
                 access_token = data['access_token']
                 refresh_token = data['refresh_token']
 
-                request.user.userprofile.access_token = access_token
-                request.user.userprofile.refresh_token = refresh_token
-                request.user.userprofile.save()
+                request.user.profile.access_token = access_token
+                request.user.profile.refresh_token = refresh_token
+                request.user.profile.save()
 
                 profile = SpotifyClient(request.user).get_profile()
-                request.user.userprofile.spotify_username = profile.json()["display_name"]
-                request.user.userprofile.save()
+                request.user.profile.spotify_username = profile.json()["display_name"]
+                request.user.profile.save()
 
                 return Response({
                     'success': True

@@ -32,7 +32,6 @@ class SearchViewSet(APIView):
                 type_plural = type + "s"
 
                 collection = rec[type_plural]
-                ids = list(map(lambda item: item["id"], collection))
-                rec[type_plural] = helpers.add_saved_status_to_collection(client, collection, ids, type)
+                rec[type_plural] = helpers.add_saved_status_to_collection(client, collection, type)
         
         return Response(rec)
