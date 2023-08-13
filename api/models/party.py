@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 class PartyMode(models.Model):
     PUBLIC = "public"
@@ -71,3 +72,43 @@ class Party(models.Model):
 
     def user_can_join(self, user):
         return True
+
+    def play(self, args):
+        self.playing = True
+        self.playback_last_action = timezone.now()
+        self.save()
+
+    def play_track(self, args):
+        self.track_uri = args.get("track_uri")
+        self.end_track(args)
+
+    def play_context(self, args):
+        self.context_uri = args.get("context_uri")
+        self.end_track(args)
+    
+    def pause(self, args):
+        self.track_progress_ms = self.current_track_progress()
+        self.playing = False
+        self.playback_last_action = timezone.now()
+        self.save()
+    
+    def previous(self, args):
+        self.track_index = self.track_index - 1 if self.track_index > 0 else 0
+        self.end_track(args)
+
+    def next(self, args):
+        self.track_index += 1
+        self.end_track(args)
+
+    def end_track(self, args):
+        self.track_progress_ms = 0
+        self.play(args)
+
+    def current_track_progress(self):
+        if not self.playing:
+            return self.track_progress_ms
+
+        since_last_playback_action_ms = round((timezone.now() - self.playback_last_action).total_seconds() * 1000)
+        current_track_progress_ms = self.track_progress_ms + since_last_playback_action_ms
+
+        return current_track_progress_ms

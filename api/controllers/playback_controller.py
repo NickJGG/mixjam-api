@@ -27,6 +27,10 @@ class PlaybackAction:
         ADD_QUEUE
     ]
 
+    REQUIRES_NO_SYNC = [
+        ADD_QUEUE
+    ]
+
 class PlaybackController(BaseController):
     def __init__(self, user):
         super().__init__(user)
@@ -41,7 +45,7 @@ class PlaybackController(BaseController):
             'pause': self.spotify.pause,
             'previous': self.spotify.previous,
             'next': self.spotify.next,
-            'seek': self.spotify.seek,
+            'seek': self.spotify.async_seek,
             "song_end": self.spotify.song_end,
             "add_queue": self.spotify.add_queue,
         }

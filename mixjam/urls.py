@@ -19,8 +19,11 @@ from django.urls.conf import include
 
 from rest_framework.authtoken.views import obtain_auth_token
 
+from mixjam import views
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
     path('auth/', obtain_auth_token),
+    path('register/', views.CreateUserView.as_view()),
 ]

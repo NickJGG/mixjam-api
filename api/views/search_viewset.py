@@ -30,8 +30,12 @@ class SearchViewSet(APIView):
 
             for type in type.split(","):
                 type_plural = type + "s"
+                
+                if type_plural in ["artists", "playlists"]:
+                    continue
 
                 collection = rec[type_plural]
                 rec[type_plural] = helpers.add_saved_status_to_collection(client, collection, type)
+                rec[type_plural] = helpers.add_artists_to_collection(client, collection)
         
         return Response(rec)

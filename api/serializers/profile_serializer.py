@@ -9,5 +9,5 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ["tag_line", "color", "picture", "friends"]
+        fields = ["tag_line", "color", "picture", "friends", "authorized"]
         extra_kwargs = {}

@@ -47,12 +47,15 @@ class ConnectSpotify(APIView):
 
                 profile = SpotifyClient(request.user).get_profile()
                 request.user.profile.spotify_username = profile.json()["display_name"]
+                request.user.profile.authorized = True
                 request.user.profile.save()
 
                 return Response({
                     'success': True
                 })
             except Exception as e:
+                request.user.profile.authorized = False
+                
                 print(e)
         else:
             pass

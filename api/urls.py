@@ -15,11 +15,14 @@ urlpatterns = [
     path("self/", views.SelfViewSet.as_view()),
     path("user/<str:username>/", views.UserViewSet.as_view()),
 
+    path("artists/<str:artist_id>", views.ArtistsViewset.as_view()),
     path("artists/<str:artist_id>/similar", views.ArtistsSimilarViewset.as_view()),
     path("artists/<str:artist_id>/top", views.ArtistsTopTracksViewset.as_view()),
     path("artists/<str:artist_id>/albums", views.ArtistsAlbumsViewset.as_view()),
     
     path("albums/<str:album_id>", views.AlbumsViewset.as_view()),
+    
+    path("playlists/<str:playlist_id>", views.PlaylistsViewset.as_view()),
 
     path("recommendations/<str:type>/", views.RecommendationsViewSet.as_view()),
     path("releases/", views.NewReleasesViewSet.as_view()),

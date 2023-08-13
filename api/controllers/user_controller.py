@@ -34,8 +34,6 @@ class UserController(BaseController):
         
         action = message.get("action")
 
-        print(message)
-
         if action is None:
             type =  message.get("type")
 

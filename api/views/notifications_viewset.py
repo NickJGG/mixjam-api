@@ -70,8 +70,6 @@ class NotificationsViewSet(APIView):
 
             new_party = Party.objects.create(code=new_code, creator=self.request.user)
             new_party.join(sender)
-            # self.request.user.profile.party = new_party
-            # self.request.user.profile.save()
 
             response_data["party"] = PartySerializer(new_party).data
             response_data["success"] = True

@@ -6,20 +6,18 @@ from rest_framework.response import Response
 from api import helpers
 from api.spotify_client import SpotifyClient
 
-class ArtistsAlbumsViewset(APIView):
+class ArtistsViewset(APIView):
     authentication_classes = [TokenAuthentication, ]
     permission_classes = [IsAuthenticated, ]
 
     def get(self, request, artist_id):
         client = SpotifyClient(request.user)
 
-        albums = client.get_artists_albums({
+        artist = client.get_artist({
             "artist_id": artist_id
-        }).json()["items"]
+        }).json()
 
-        albums = list(filter(lambda album: album["album_type"] != "single", albums))
-
-        albums = helpers.add_saved_status_to_collection(client, albums, "artist")
-        albums = helpers.add_artists_to_collection(client, albums)
+        artist = helpers.add_saved_status_to_collection(client, [artist], "artist")[0]
+        # artist = helpers.add_artists_to_collection(client, artist)
         
-        return Response(albums)
+        return Response(artist)

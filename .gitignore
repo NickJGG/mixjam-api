@@ -1,5 +1,5 @@
 # Custom
-/frontend/
+frontend/
 
 RUN.bat
 db.sqlite3

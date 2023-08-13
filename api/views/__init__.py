@@ -1,5 +1,6 @@
 from .albums_viewset import AlbumsViewset
 from .artists_albums_viewset import ArtistsAlbumsViewset
+from .artists_viewset import ArtistsViewset
 from .artists_similar_viewset import ArtistsSimilarViewset
 from .artists_top_tracks_viewset import ArtistsTopTracksViewset
 from .artists_similar_viewset import ArtistsSimilarViewset
@@ -7,6 +8,7 @@ from .connect_spotify_viewset import ConnectSpotify
 from .friends_viewset import FriendsViewSet
 from .new_releases_viewset import NewReleasesViewSet
 from .notifications_viewset import NotificationsViewSet
+from .playlists_viewset import PlaylistsViewset
 from .recent_tracks_viewset import RecentTracksViewSet
 from .recommendations_viewset import RecommendationsViewSet
 from .save_viewset import SaveViewSet

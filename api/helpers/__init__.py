@@ -19,9 +19,14 @@ def add_artists_to_collection(spotify_client, collection):
     collection, artist_ids = add_artists(collection)
 
     if len(artist_ids) > 0:
+        print("Collection count:", len(collection))
+        print("Artist count:", len(artist_ids))
+
         resp = spotify_client.get_artists({
             "ids": artist_ids
         }).json()
+
+        print(resp)
 
         for artist in resp.get("artists"):
             spotify_id = artist.get("id")
@@ -40,25 +45,32 @@ def add_artists(collection):
     artist_ids = []
 
     for item_index, item in enumerate(collection):
+        print(item.keys())
         artists = item.get("artists")
 
-        for artist_index, artist in enumerate(artists):
-            if "images" in artist:
-                continue
+        if len(artists) == 0:
+            continue
 
-            artist_id = artist["id"]
-            artist_obj = Artist.objects.filter(spotify_id=artist_id)
+        artist_index = 0
+        artist = artists[artist_index]
 
-            if artist_obj.exists():
-                artist_obj = artist_obj[0]
+        # for artist_index, artist in enumerate(artists):
+        if "images" in artist:
+            continue
 
-                collection[item_index]["artists"][artist_index]["images"] = [
-                    {
-                        "url": artist_obj.image_url,
-                    }
-                ]
-            else:
-                artist_ids.append(artist_id)
+        artist_id = artist["id"]
+        artist_obj = Artist.objects.filter(spotify_id=artist_id)
+
+        if artist_obj.exists():
+            artist_obj = artist_obj[0]
+
+            collection[item_index]["artists"][artist_index]["images"] = [
+                {
+                    "url": artist_obj.image_url,
+                }
+            ]
+        else:
+            artist_ids.append(artist_id)
     
     return collection, artist_ids
 

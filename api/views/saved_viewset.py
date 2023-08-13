@@ -24,9 +24,6 @@ class SavedViewSet(APIView):
 
         if type in rec:
             rec = rec[type]
-        
-        if type == "artists":
-            print("\n\n\n\n\n\n\n\n\n\n", rec)
 
         if "items" in rec:
             rec = rec["items"]
@@ -34,7 +31,9 @@ class SavedViewSet(APIView):
         if isinstance(rec, list) and len(rec) > 0 and type[:-1] in rec[0]:
             rec = list(map(lambda item: item[type[:-1]], rec))
         
-        if type != "artists":
+        if type not in ["artists", "playlists"]:
             rec = helpers.add_artists_to_collection(client, rec)
+
+        rec = helpers.add_saved_status_to_collection(client, rec, type[:-1])
 
         return Response(rec)
