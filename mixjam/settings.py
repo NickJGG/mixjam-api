@@ -33,7 +33,7 @@ DEBUG = os.environ.get("DJANGO_DEVELOPMENT", "") != ""
 ALLOWED_HOSTS = [
     "127.0.0.1:5000",
     "localhost",
-    "mixjam.heroku.com",
+    "mixjam-frontend-5059972f351d.herokuapp.com",
 ]
 
 
