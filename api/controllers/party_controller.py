@@ -33,8 +33,11 @@ class PartyController(BaseController):
             PlaybackAction.PREVIOUS: self.party.previous,
             PlaybackAction.PLAY_TRACK: self.party.play_track,
             PlaybackAction.PLAY_CONTEXT: self.party.play_context,
+            PlaybackAction.SEEK: self.party.seek,
+            PlaybackAction.TRACK_END: self.party.track_end,
         }
         self.response_actions = {
+            "track_end": self.get_state,
             "get_state": self.get_state,
         }
 
@@ -56,25 +59,45 @@ class PartyController(BaseController):
     async def handle_response(self, response):
         print(f"[Party][Response] { self.user.username }: { response }")
 
-        data = {}
-
         action = response.get("action")
+        current_state = None
+        update_party_uris = action == PlaybackAction.TRACK_END and self.party.ending
 
         if action in PlaybackAction.ALL:
-            response = await PlaybackController(self.user).handle_response(response)
+            playback_response = await PlaybackController(self.user).handle_response(response, get_state=True)
+
+            response = {
+                **response,
+                **playback_response["data"],
+            }
+
+            if update_party_uris:
+                current_state = response.get("playback")
+                track_uri = current_state.get("item").get("uri")
+
+                self.party.play_track({
+                    "track_uri": track_uri,
+                })
 
             if action not in PlaybackAction.REQUIRES_NO_SYNC:
                 await self.partial_sync()
+        
+        if action != PlaybackAction.GET_STATE and current_state is None:
+            playback_state = await self.client.get_state_async({})
 
-            return response
+            response = {
+                **response,
+                **playback_state.json(),
+            }
 
-        func = self.response_actions[action]
-        data = {
-            **data,
-            **await func(response),
-        }
+        if action in self.response_actions:
+            func = self.response_actions[action]
+            response = {
+                **response,
+                **await func(response),
+            }
 
-        return self.create_message(data)
+        return self.create_message(response)
 
     #region PLAYBACK REQUESTS
 

@@ -19,7 +19,9 @@ class TopArtistsViewSet(APIView):
             "type": "artists",
             "limit": limit,
             "time_range": "short_term"
-        }).json()["items"]
+        }).json()
+        print(artists)
+        artists = artists["items"]
 
         artists = helpers.add_saved_status_to_collection(client, artists, "artist")
         

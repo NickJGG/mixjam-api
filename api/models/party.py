@@ -32,7 +32,9 @@ class Party(models.Model):
     track_progress_ms = models.IntegerField(default=0, null=True, blank=True)
     playback_last_action = models.DateTimeField(null=True, blank=True)
     track_last_end = models.DateTimeField(null=True, blank=True)
+
     playing = models.BooleanField(default=False, blank=True)
+    ending = models.BooleanField(default=False, blank=True)
 
     time_created = models.DateTimeField(auto_now_add=True, null=True)
 
@@ -80,6 +82,7 @@ class Party(models.Model):
 
     def play_track(self, args):
         self.track_uri = args.get("track_uri")
+        self.context_uri = args.get("context_uri", "")
         self.end_track(args)
 
     def play_context(self, args):
@@ -101,7 +104,24 @@ class Party(models.Model):
         self.end_track(args)
 
     def end_track(self, args):
+        self.ending = False
         self.track_progress_ms = 0
+        self.play(args)
+
+    def track_end(self, args):
+        if self.ending:
+            return False
+
+        ending_track_uri = args.get("track_uri")
+
+        if self.track_uri == ending_track_uri:
+            self.ending = True
+            self.save()
+
+            return True
+
+    def seek(self, args):
+        self.track_progress_ms = args.get("progress_ms")
         self.play(args)
 
     def current_track_progress(self):

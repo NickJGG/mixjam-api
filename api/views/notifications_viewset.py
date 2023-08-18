@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+from api.spotify_client import SpotifyClient
 from api.consumers import send_to_user
 from api.models import Party, PartyInvite, FriendRequest, User, Notification
 from api.models.notification import NotificationType
@@ -48,7 +49,6 @@ class NotificationsViewSet(APIView):
     def post(self, request, *args, **kwargs):
         user_id = request.data.get("userId")
         party_code = request.data.get("partyCode")
-        print(request.data)
         type = NotificationType.MATCH[request.data.get("type")]
 
         sender = self.request.user
@@ -59,24 +59,34 @@ class NotificationsViewSet(APIView):
         }
 
         if sender.profile.party is None:
-            print("\nIS NONE")
             while True:
                 new_code = get_random_string(length=6)
 
-                rooms = Party.objects.filter(code = new_code)
+                parties = Party.objects.filter(code=new_code)
 
-                if not rooms.exists():
+                if not parties.exists():
                     break
 
             new_party = Party.objects.create(code=new_code, creator=self.request.user)
             new_party.join(sender)
 
+            spotify_client = SpotifyClient(sender)
+            current_state = spotify_client.get_state({}).json()
+
+            track = current_state.get("item")
+            track_uri = track.get("uri")
+            context = current_state.get("context")
+            context_uri = context.get("uri")
+
+            new_party.play_track({
+                "track_uri": track_uri,
+                "context_uri": context_uri,
+            })
+
             response_data["party"] = PartySerializer(new_party).data
             response_data["success"] = True
 
         if sender.profile.party.can_invite(sender, receiver):
-            print("AND CAN INVITE\n")
-            
             notification = Notification(
                 sender=sender,
                 receiver=receiver

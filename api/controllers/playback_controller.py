@@ -1,8 +1,11 @@
+from asgiref.sync import async_to_sync
+
 from api import SpotifyClient
 
 from .base_controller import BaseController
 
 class PlaybackAction:
+    GET_STATE = "get_state"
     PLAY = "play"
     PLAY_DIRECT = "play_direct"
     PLAY_CONTEXT = "play_context"
@@ -11,7 +14,7 @@ class PlaybackAction:
     PREVIOUS = "previous"
     NEXT = "next"
     SEEK = "seek"
-    SONG_END = "song_end"
+    TRACK_END = "track_end"
     ADD_QUEUE = "add_queue"
 
     ALL = [
@@ -23,12 +26,12 @@ class PlaybackAction:
         PREVIOUS,
         NEXT,
         SEEK,
-        SONG_END,
+        TRACK_END,
         ADD_QUEUE
     ]
 
     REQUIRES_NO_SYNC = [
-        ADD_QUEUE
+        ADD_QUEUE,
     ]
 
 class PlaybackController(BaseController):
@@ -37,17 +40,17 @@ class PlaybackController(BaseController):
 
         self.spotify = SpotifyClient(user)
         self.spotify_actions = {
-            'get_state': self.spotify.get_state,
-            'play': self.spotify.play,
-            'play_direct': self.spotify.play_direct,
-            'play_context': self.spotify.play_context,
-            'play_track': self.spotify.play_track,
-            'pause': self.spotify.pause,
-            'previous': self.spotify.previous,
-            'next': self.spotify.next,
-            'seek': self.spotify.async_seek,
-            "song_end": self.spotify.song_end,
-            "add_queue": self.spotify.add_queue,
+            PlaybackAction.GET_STATE: self.spotify.get_state_async,
+            PlaybackAction.PLAY: self.spotify.play,
+            PlaybackAction.PLAY_DIRECT: self.spotify.play_direct,
+            PlaybackAction.PLAY_CONTEXT: self.spotify.play_context,
+            PlaybackAction.PLAY_TRACK: self.spotify.play_track,
+            PlaybackAction.PAUSE: self.spotify.pause,
+            PlaybackAction.PREVIOUS: self.spotify.previous,
+            PlaybackAction.NEXT: self.spotify.next,
+            PlaybackAction.SEEK: self.spotify.async_seek,
+            PlaybackAction.TRACK_END: self.spotify.track_end,
+            PlaybackAction.ADD_QUEUE: self.spotify.add_queue,
         }
     
     async def handle_request(self, message):
@@ -59,21 +62,22 @@ class PlaybackController(BaseController):
 
         return self.create_message(data)
     
-    async def handle_response(self, message):
+    async def handle_response(self, message, get_state=False):
         print(f"[Playback] Response: { message }")
 
         data = {}
 
         action = message.get("action")
 
-        func = self.spotify_actions[action]
+        func = self.spotify_actions.get(action)
         action_result = await func(message)
+        
+        if get_state:
+            playback_state = await self.spotify.get_state_async(action_result)
 
-        playback_state = await self.spotify.get_state(action_result)
-
-        try:
-            data["playback"] = playback_state.json()
-        except:
-            pass
+            try:
+                data["playback"] = playback_state.json()
+            except:
+                pass
 
         return self.create_message(data)

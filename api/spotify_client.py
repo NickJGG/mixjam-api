@@ -29,6 +29,7 @@ ENDPOINTS = {
     "top_items": "https://api.spotify.com/v1/me/top/{type}",
 
     "playlist": "https://api.spotify.com/v1/playlists/{playlist_id}",
+    "playlist_tracks": "https://api.spotify.com/v1/playlists/{playlist_id}/tracks",
     
     "album": "https://api.spotify.com/v1/albums/{album_id}",
 
@@ -140,11 +141,15 @@ class SpotifyClient:
 
         return await self.async_post(ENDPOINTS["add_queue"], params=post_params)
 
-    async def song_end(self, data):
-        return await self.get_state(data)
+    async def track_end(self, data):
+        return await self.get_state_async(data)
 
-    async def get_state(self, data):
+    def get_state(self, data):
         time.sleep(.25)
+        return self.get(ENDPOINTS["player"])
+    
+    async def get_state_async(self, data):
+        time.sleep(.5)
         return await self.async_get(ENDPOINTS["player"])
     
     def save(self, data):
@@ -179,7 +184,23 @@ class SpotifyClient:
     def get_playlist(self, data):
         playlist_id = data.pop("playlist_id")
 
-        return self.get(ENDPOINTS["playlist"].format(playlist_id=playlist_id), params=data)
+        playlist = self.get(ENDPOINTS["playlist"].format(playlist_id=playlist_id), params=data).json()
+
+        print("total:", playlist['tracks']['total'])
+        print("current:", len(playlist['tracks']['items']))
+
+        if playlist['tracks']['total'] > 99:
+            print("floor:", math.floor(playlist['tracks']['total'] / 100))
+            for x in range(math.floor(playlist['tracks']['total'] / 100)):
+                data["offset"] = (x + 1) * 100
+                print("offset:", data["offset"])
+
+                response = self.get(ENDPOINTS["playlist_tracks"].format(playlist_id=playlist_id), params=data).json()
+                print("partial:", len(response['items']))
+
+                playlist['tracks']['items'].extend(response['items'])
+
+        return playlist
 
     def get_album(self, data):
         album_id = data.pop("album_id")

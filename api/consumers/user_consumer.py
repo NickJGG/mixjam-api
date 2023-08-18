@@ -19,6 +19,9 @@ class UserConsumer(AsyncWebsocketConsumer):
 
         await self.accept()
 
+        user.profile.party = None
+        user.profile.save()
+
         # request = json.dumps({
         #     "type": "request",
         #     "data": {

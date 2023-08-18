@@ -15,7 +15,7 @@ class PlaylistsViewset(APIView):
 
         playlist = client.get_playlist({
             "playlist_id": playlist_id
-        }).json()
+        })
 
         playlist["tracks"] = list(map(lambda item: item["track"], playlist["tracks"]["items"]))
 

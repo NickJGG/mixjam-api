@@ -29,29 +29,29 @@ class UserController(BaseController):
 
         return self.create_message(data)
     
-    async def handle_response(self, message):
+    async def handle_response(self, response):
+        print(f"[User][Response] { self.user.username }: { response }")
+
         data = {}
         
-        action = message.get("action")
+        action = response.get("action")
 
         if action is None:
-            type =  message.get("type")
+            type =  response.get("type")
 
             if type in self.allowed_types:
                 data = {
                     **data,
-                    **message
+                    **response
                 }
         elif action in self.actions:
             func = self.actions[action]
             data = {
                 **data,
-                **await func(message)
+                **await func(response)
             }
         else:
-            return await PlaybackController(self.user).handle_response(message)
-
-        print(f"RESPONSE: { data }")
+            return await PlaybackController(self.user).handle_response(response, get_state=True)
 
         return self.create_message(data)
     

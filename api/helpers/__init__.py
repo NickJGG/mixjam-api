@@ -19,21 +19,15 @@ def add_artists_to_collection(spotify_client, collection):
     collection, artist_ids = add_artists(collection)
 
     if len(artist_ids) > 0:
-        print("Collection count:", len(collection))
-        print("Artist count:", len(artist_ids))
-
         resp = spotify_client.get_artists({
             "ids": artist_ids
         }).json()
-
-        print(resp)
 
         for artist in resp.get("artists"):
             spotify_id = artist.get("id")
             name = artist.get("name")
             images = artist.get("images")
             image_url = images[0]["url"] if len(images) > 0 else ""
-            print(image_url)
 
             Artist.objects.create(spotify_id=spotify_id, name=name, image_url=image_url)
     
@@ -45,7 +39,6 @@ def add_artists(collection):
     artist_ids = []
 
     for item_index, item in enumerate(collection):
-        print(item.keys())
         artists = item.get("artists")
 
         if len(artists) == 0:

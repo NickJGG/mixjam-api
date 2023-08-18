@@ -20,7 +20,8 @@ class ConnectSpotify(APIView):
         if 'code' in request.data:
             code = request.data['code']
 
-            redirect_uri = 'http://localhost:3000/callback/' if os.environ.get('DJANGO_DEVELOPMENT') else 'https://mixjam.io/callback/'
+            base_url = os.environ.get("BASE_URL")
+            redirect_uri = f"{base_url}/callback/"
 
             token_data = {
                 'code': code,
@@ -31,9 +32,12 @@ class ConnectSpotify(APIView):
             client_creds = f"{client_id}:{client_secret}"
             client_creds_b64 = base64.b64encode(client_creds.encode()).decode()
 
+            print(os.environ)
+
             token_headers = {"Authorization": f"Basic {client_creds_b64}"}
 
             r = requests.post('https://accounts.spotify.com/api/token', data = token_data, headers = token_headers)
+            print(r.json())
 
             try:
                 data = r.json()
