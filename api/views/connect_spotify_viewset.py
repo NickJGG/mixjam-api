@@ -20,7 +20,7 @@ class ConnectSpotify(APIView):
         if 'code' in request.data:
             code = request.data['code']
 
-            base_url = os.environ.get("BASE_URL")
+            base_url = os.environ.get("SPOTIFY_REDIRECT_URL")
             redirect_uri = f"{base_url}/callback/"
 
             print(redirect_uri)
