@@ -6,6 +6,7 @@ autopep8==1.4.4
 beautifulsoup4==4.8.2
 bs4==0.0.1
 certifi==2020.4.5.2
+channels==3.0.3
 chardet==3.0.4
 defusedxml==0.6.0
 distlib==0.3.0
