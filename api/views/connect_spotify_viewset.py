@@ -41,6 +41,8 @@ class ConnectSpotify(APIView):
             response = requests.post('https://accounts.spotify.com/api/token', data = token_data, headers = token_headers)
 
             try:
+                response = response.json()
+
                 access_token = response['access_token']
                 refresh_token = response['refresh_token']
 
