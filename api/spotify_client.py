@@ -350,7 +350,7 @@ class SpotifyClient:
 
             response = await requests_async.get(endpoint, params = params, headers=self.get_headers())
 
-        print(response.json())
+        print(response)
 
         return response.json() if response.status_code != 204 else {}
 
@@ -364,7 +364,7 @@ class SpotifyClient:
 
             response = await requests_async.put(endpoint, params = data, headers = self.get_headers())
 
-        print(response.json())
+        print(response)
 
         return response.json() if response.status_code != 204 else {}
 
@@ -378,7 +378,7 @@ class SpotifyClient:
 
             response = await requests_async.post(endpoint, data = data, params = params, headers = self.get_headers())
 
-        print(response.json())
+        print(response)
 
         return response.json() if response.status_code != 204 else {}
 
@@ -390,7 +390,7 @@ class SpotifyClient:
 
             response = requests.get(endpoint, params = params, headers=self.get_headers())
 
-        print(response.json())
+        print(response)
 
         return response.json() if response.status_code != 204 else {}
 
@@ -404,7 +404,7 @@ class SpotifyClient:
 
             response = requests.put(endpoint, params = data, headers = self.get_headers())
 
-        print(response.json())
+        print(response)
 
         return response.json() if response.status_code != 204 else {}
 
@@ -418,7 +418,7 @@ class SpotifyClient:
 
             response = requests.post(endpoint, data = data, headers = self.get_headers())
 
-        print(response.json())
+        print(response)
 
         return response.json() if response.status_code != 204 else {}
 
@@ -430,7 +430,7 @@ class SpotifyClient:
 
             response = requests.delete(endpoint, params = params, headers = self.get_headers())
 
-        print(response.json())
+        print(response)
 
         return response.json() if response.status_code != 204 else {}
 
