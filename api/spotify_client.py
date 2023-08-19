@@ -350,6 +350,8 @@ class SpotifyClient:
 
             response = await requests_async.get(endpoint, params = params, headers=self.get_headers())
 
+        print(response.json())
+
         return response.json() if response.status_code != 204 else {}
 
     async def async_put(self, endpoint, data = {}, params = {}):
@@ -361,6 +363,8 @@ class SpotifyClient:
             self.refresh_token()
 
             response = await requests_async.put(endpoint, params = data, headers = self.get_headers())
+
+        print(response.json())
 
         return response.json() if response.status_code != 204 else {}
 
@@ -374,6 +378,8 @@ class SpotifyClient:
 
             response = await requests_async.post(endpoint, data = data, params = params, headers = self.get_headers())
 
+        print(response.json())
+
         return response.json() if response.status_code != 204 else {}
 
     def get(self, endpoint, params = {}):
@@ -383,6 +389,8 @@ class SpotifyClient:
             self.refresh_token()
 
             response = requests.get(endpoint, params = params, headers=self.get_headers())
+
+        print(response.json())
 
         return response.json() if response.status_code != 204 else {}
 
@@ -396,6 +404,8 @@ class SpotifyClient:
 
             response = requests.put(endpoint, params = data, headers = self.get_headers())
 
+        print(response.json())
+
         return response.json() if response.status_code != 204 else {}
 
     def post(self, endpoint, data = {}):
@@ -408,6 +418,8 @@ class SpotifyClient:
 
             response = requests.post(endpoint, data = data, headers = self.get_headers())
 
+        print(response.json())
+
         return response.json() if response.status_code != 204 else {}
 
     def delete(self, endpoint, params = {}):
@@ -417,6 +429,8 @@ class SpotifyClient:
             self.refresh_token()
 
             response = requests.delete(endpoint, params = params, headers = self.get_headers())
+
+        print(response.json())
 
         return response.json() if response.status_code != 204 else {}
 

@@ -51,7 +51,7 @@ class ConnectSpotify(APIView):
                 request.user.profile.save()
 
                 profile = SpotifyClient(request.user).get_profile()
-                request.user.profile.spotify_username = profile.json()["display_name"]
+                request.user.profile.spotify_username = profile["display_name"]
                 request.user.profile.authorized = True
                 request.user.profile.save()
 
