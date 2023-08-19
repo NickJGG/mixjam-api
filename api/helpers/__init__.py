@@ -2,12 +2,12 @@ from api.models import PartyInvite, Artist
 from api.serializers import PartyInviteSerializer
 
 def add_saved_status_to_collection(spotify_client, collection, type):
-    ids = list(map(lambda item: item["id"], collection))
+    ids = list(map(lambda item: item.get("id", ""), collection))
 
     like_checks = spotify_client.check_if_saved({
         "type": type,
         "ids": ",".join(ids)
-    }).json()
+    })
 
     for index, like_check in enumerate(like_checks):
         if len(collection) > index:
@@ -21,7 +21,7 @@ def add_artists_to_collection(spotify_client, collection):
     if len(artist_ids) > 0:
         resp = spotify_client.get_artists({
             "ids": artist_ids
-        }).json()
+        })
 
         for artist in resp.get("artists"):
             spotify_id = artist.get("id")

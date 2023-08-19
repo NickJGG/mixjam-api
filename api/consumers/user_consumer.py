@@ -19,17 +19,20 @@ class UserConsumer(AsyncWebsocketConsumer):
 
         await self.accept()
 
-        user.profile.party = None
-        user.profile.save()
+        print(user.profile.party)
 
-        # request = json.dumps({
-        #     "type": "request",
-        #     "data": {
-        #         "action": "join_party",
-        #         "party_code": "ohuiwe"
-        #     }
-        # })
-        # await self.receive(request)
+        if user.profile.party is not None and user.profile.party.num_users_online() > 0:
+            request = json.dumps({
+                "type": "request",
+                "data": {
+                    "action": "join_party",
+                    "party_code": user.profile.party.code,
+                }
+            })
+            await self.receive(request)
+        else:
+            user.profile.party = None
+            user.profile.save()
 
         user.profile.go_online()
 
@@ -67,12 +70,6 @@ class UserConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_send(
             self.group_name, data
         )
-
-    async def request_connection(self, data):
-        pass
-
-    async def request_playback(self, data):
-        pass
 
     def get_user(self):
         return api_models.User.objects.get(username = self.scope['user'])

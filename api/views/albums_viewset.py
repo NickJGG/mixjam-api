@@ -15,13 +15,13 @@ class AlbumsViewset(APIView):
 
         album = client.get_album({
             "album_id": album_id
-        }).json()
+        })
 
-        album["tracks"] = album["tracks"]["items"]
+        album["tracks"] = album.get("tracks", []).get("items", [])
 
-        album["tracks"] = helpers.add_saved_status_to_collection(client, album["tracks"], "track")
+        album["tracks"] = helpers.add_saved_status_to_collection(client, album.get("tracks", []), "track")
         album = helpers.add_saved_status_to_collection(client, [album], "album")[0]
-        album["tracks"] = helpers.add_artists_to_collection(client, album["tracks"])
+        album["tracks"] = helpers.add_artists_to_collection(client, album.get("tracks", []))
         
         album_without_tracks = album.copy()
         album_without_tracks.pop("tracks")
@@ -29,6 +29,6 @@ class AlbumsViewset(APIView):
         album["tracks"] = map(lambda track: {
             **track,
             "album": album_without_tracks
-        }, album["tracks"])
+        }, album.get("tracks", []))
         
         return Response(album)

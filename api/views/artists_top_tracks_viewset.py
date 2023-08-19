@@ -15,7 +15,7 @@ class ArtistsTopTracksViewset(APIView):
 
         tracks = client.get_artists_top_tracks({
             "artist_id": artist_id
-        }).json()["tracks"]
+        })
 
         tracks = helpers.add_saved_status_to_collection(client, tracks, "artist")
         tracks = helpers.add_artists_to_collection(client, tracks)

@@ -35,6 +35,7 @@ class NotificationsViewSet(APIView):
             type = invite.get_type()
 
             if type == NotificationType.PARTY_INVITE:
+                response_data["join_party"] = True
                 response_data["party"] = PartySerializer(invite.party).data
             elif type == NotificationType.FRIEND_REQUEST:
                 response_data["friend"] = FriendSerializer(notification.sender).data
@@ -68,10 +69,12 @@ class NotificationsViewSet(APIView):
                     break
 
             new_party = Party.objects.create(code=new_code, creator=self.request.user)
+            new_party.allowed_users.add(self.request.user)
+            new_party.save()
             new_party.join(sender)
 
             spotify_client = SpotifyClient(sender)
-            current_state = spotify_client.get_state({}).json()
+            current_state = spotify_client.get_state({})
 
             track = current_state.get("item")
             track_uri = track.get("uri")
@@ -83,6 +86,7 @@ class NotificationsViewSet(APIView):
                 "context_uri": context_uri,
             })
 
+            response_data["join_party"] = True
             response_data["party"] = PartySerializer(new_party).data
             response_data["success"] = True
 

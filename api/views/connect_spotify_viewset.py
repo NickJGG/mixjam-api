@@ -38,14 +38,11 @@ class ConnectSpotify(APIView):
 
             token_headers = {"Authorization": f"Basic {client_creds_b64}"}
 
-            r = requests.post('https://accounts.spotify.com/api/token', data = token_data, headers = token_headers)
-            print(r.json())
+            response = requests.post('https://accounts.spotify.com/api/token', data = token_data, headers = token_headers)
 
             try:
-                data = r.json()
-
-                access_token = data['access_token']
-                refresh_token = data['refresh_token']
+                access_token = response['access_token']
+                refresh_token = response['refresh_token']
 
                 request.user.profile.access_token = access_token
                 request.user.profile.refresh_token = refresh_token

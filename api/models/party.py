@@ -38,6 +38,11 @@ class Party(models.Model):
 
     time_created = models.DateTimeField(auto_now_add=True, null=True)
 
+    def num_users_online(self):
+        print(list(map(lambda user: user.profile.online_count, self.users.all())))
+
+        return len(list(filter(lambda user: user.profile.online_count > 0, self.users.all())))
+
     def join(self, user):
         if not self.user_can_join(user):
             return False
@@ -51,11 +56,23 @@ class Party(models.Model):
         return True
     
     def leave(self, user):
-        self.users.remove(user)
-        self.save()
+        print("\n\n\n\n\nLEAVE\n\n\n\n\n")
+
+        self.disconnect(user)
 
         user.profile.party = None
         user.profile.save()
+
+        return True
+
+    def disconnect(self, user):
+        self.users.remove(user)
+        self.save()
+
+        if self.users.count() == 0:
+            for user in self.allowed_users.all():
+                user.profile.party = None
+                user.profile.save()
 
         return True
 
@@ -82,7 +99,7 @@ class Party(models.Model):
 
     def play_track(self, args):
         self.track_uri = args.get("track_uri")
-        self.context_uri = args.get("context_uri", "")
+        self.context_uri = args.get("context_uri", self.context_uri)
         self.end_track(args)
 
     def play_context(self, args):

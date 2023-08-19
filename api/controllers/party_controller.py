@@ -7,11 +7,13 @@ from .playback_controller import PlaybackController, PlaybackAction
 class PartyAction:
     JOIN = "join"
     LEAVE = "leave"
+    DISCONNECT = "disconnect"
     GET_STATE = "get_state"
 
     ALL = [
         JOIN,
         LEAVE,
+        DISCONNECT,
         GET_STATE,
     ]
 
@@ -24,6 +26,7 @@ class PartyController(BaseController):
         self.party_actions = {
             PartyAction.JOIN: self.join,
             PartyAction.LEAVE: self.leave,
+            PartyAction.DISCONNECT: self.disconnect,
             PartyAction.GET_STATE: self.get_state,
         }
         self.playback_actions = {
@@ -87,7 +90,7 @@ class PartyController(BaseController):
 
             response = {
                 **response,
-                **playback_state.json(),
+                **playback_state,
             }
 
         if action in self.response_actions:
@@ -132,16 +135,17 @@ class PartyController(BaseController):
         if success and self.party.users.count() > 1:
             await self.full_sync()
 
-        return {
-            "party": PartySerializer(self.party).data
-        }
+        return await self.get_state(message)
     
     async def leave(self, message):
         success = self.party.leave(self.user)
 
-        return {
-            "party": PartySerializer(self.party).data
-        }
+        return await self.get_state(message)
+
+    async def disconnect(self, message):
+        success = self.party.disconnect(self.user)
+
+        return await self.get_state(message)
     
     #endregion
     

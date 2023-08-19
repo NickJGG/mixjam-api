@@ -30,7 +30,6 @@ class Profile(models.Model):
     
     def go_offline(self):
         self.online_count = self.online_count - 1 if self.online_count > 0 else 0
-        self.party = None
 
         self.save()
 

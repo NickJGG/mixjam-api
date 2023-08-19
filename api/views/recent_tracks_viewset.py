@@ -17,7 +17,7 @@ class RecentTracksViewSet(APIView):
 
         tracks = client.get_recent_tracks({
             "limit": limit
-        }).json()["items"]
+        })
 
         tracks = list(map(lambda item: item["track"], tracks))
         tracks = helpers.add_saved_status_to_collection(client, tracks, "track")

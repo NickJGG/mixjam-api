@@ -15,7 +15,7 @@ class ArtistsAlbumsViewset(APIView):
 
         albums = client.get_artists_albums({
             "artist_id": artist_id
-        }).json()["items"]
+        })
 
         albums = list(filter(lambda album: album["album_type"] != "single", albums))
 

@@ -76,7 +76,7 @@ class PlaybackController(BaseController):
             playback_state = await self.spotify.get_state_async(action_result)
 
             try:
-                data["playback"] = playback_state.json()
+                data["playback"] = playback_state
             except:
                 pass
 

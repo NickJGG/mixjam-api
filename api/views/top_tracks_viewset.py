@@ -19,7 +19,7 @@ class TopTracksViewSet(APIView):
             "type": "tracks",
             "limit": limit,
             "time_range": "short_term"
-        }).json()["items"]
+        })
 
         tracks = helpers.add_saved_status_to_collection(client, tracks, "track")
         tracks = helpers.add_artists_to_collection(client, tracks)

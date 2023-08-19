@@ -31,15 +31,10 @@ class PartyConsumer(AsyncWebsocketConsumer):
         await self.receive(request)
 
     async def disconnect(self, close_code):
-        party = self.get_party()
-        user = self.get_user()
-
-        party.leave(user)
-
         request = json.dumps({
             "type": "request",
             "data": {
-                "action": "leave"
+                "action": "disconnect"
             }
         })
         await self.receive(request)

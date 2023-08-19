@@ -17,7 +17,7 @@ class NewReleasesViewSet(APIView):
 
         releases = client.get_new_releases({
             "limit": limit
-        }).json()["albums"]["items"]
+        })
 
         releases = helpers.add_saved_status_to_collection(client, releases, "track")
 

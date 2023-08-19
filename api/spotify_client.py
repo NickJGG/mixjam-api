@@ -184,19 +184,13 @@ class SpotifyClient:
     def get_playlist(self, data):
         playlist_id = data.pop("playlist_id")
 
-        playlist = self.get(ENDPOINTS["playlist"].format(playlist_id=playlist_id), params=data).json()
-
-        print("total:", playlist['tracks']['total'])
-        print("current:", len(playlist['tracks']['items']))
+        playlist = self.get(ENDPOINTS["playlist"].format(playlist_id=playlist_id), params=data)
 
         if playlist['tracks']['total'] > 99:
-            print("floor:", math.floor(playlist['tracks']['total'] / 100))
             for x in range(math.floor(playlist['tracks']['total'] / 100)):
                 data["offset"] = (x + 1) * 100
-                print("offset:", data["offset"])
 
-                response = self.get(ENDPOINTS["playlist_tracks"].format(playlist_id=playlist_id), params=data).json()
-                print("partial:", len(response['items']))
+                response = self.get(ENDPOINTS["playlist_tracks"].format(playlist_id=playlist_id), params=data)
 
                 playlist['tracks']['items'].extend(response['items'])
 
@@ -215,26 +209,26 @@ class SpotifyClient:
     def get_artists_similar(self, data):
         artist_id = data.pop("artist_id")
 
-        return self.get(ENDPOINTS["artists_similar"].format(artist_id=artist_id), params=data)
+        return self.get(ENDPOINTS["artists_similar"].format(artist_id=artist_id), params=data).get("artists", [])
     
     def get_artists_top_tracks(self, data):
         artist_id = data.pop("artist_id")
         data["market"] = "US"
 
-        return self.get(ENDPOINTS["artists_top_tracks"].format(artist_id=artist_id), params=data)
+        return self.get(ENDPOINTS["artists_top_tracks"].format(artist_id=artist_id), params=data).get("tracks", [])
     
     def get_artists_albums(self, data):
         artist_id = data.pop("artist_id")
 
-        return self.get(ENDPOINTS["artists_albums"].format(artist_id=artist_id), params=data)
+        return self.get(ENDPOINTS["artists_albums"].format(artist_id=artist_id), params=data).get("items", [])
 
     def get_top_items(self, data):
         type = data.pop("type")
 
-        return self.get(ENDPOINTS["top_items"].format(type=type), params=data)
+        return self.get(ENDPOINTS["top_items"].format(type=type), params=data).get("items", [])
 
     def get_recent_tracks(self, data):
-        return self.get(ENDPOINTS["saved_tracks"], params=data)
+        return self.get(ENDPOINTS["saved_tracks"], params=data).get("items", [])
     
     def get_search_results(self, data):
         return self.get(ENDPOINTS["search"], params=data)
@@ -256,33 +250,31 @@ class SpotifyClient:
             "type": "tracks",
             "limit": num_short_term_tracks,
             "time_range": "short_term"
-        }).json()["items"]
+        })
 
         medium_term_tracks = self.get_top_items({
             "type": "tracks",
             "limit": num_medium_term_tracks,
             "time_range": "medium_term"
-        }).json()["items"]
+        })
 
         ids = list(map(lambda track: track["id"], short_term_tracks + medium_term_tracks))
         ids = ",".join(ids)
 
         data["seed_tracks"] = ids
 
-        return self.get(ENDPOINTS["recommendations"], params=data)
+        return self.get(ENDPOINTS["recommendations"], params=data).get("tracks", [])
     
     def get_saved(self, data):
         type = data.pop("type")
 
         if type == "artists":
             data["type"] = type[:-1]
-        
-        print(data)
 
         return self.get(ENDPOINTS[f"saved_{ type }"].format(user_id=self.user.profile.spotify_username), params=data)
 
     def get_new_releases(self, data):
-        return self.get(ENDPOINTS['new_releases'], params = data)
+        return self.get(ENDPOINTS['new_releases'], params = data).get("albums", []).get("items", [])
 
     def get_profile(self):
         return self.get(ENDPOINTS["profile"])
@@ -291,6 +283,24 @@ class SpotifyClient:
 
     async def async_refresh_token(self):
         response = await requests_async.post(ENDPOINTS["refresh"], data = {
+            "grant_type": "refresh_token",
+            "refresh_token": self.user.profile.refresh_token
+        }, headers = self.get_token_headers())
+
+        r_json = response.json()
+
+        if response.status_code < 400:
+            self.user.profile.access_token = r_json["access_token"]
+            self.user.profile.authorized = True
+        else:
+            self.user.profile.authorized = False
+        
+        self.user.profile.save()
+
+        return self.user.profile.authorized
+
+    def refresh_token(self):
+        response = requests.post(ENDPOINTS["refresh"], data = {
             "grant_type": "refresh_token",
             "refresh_token": self.user.profile.refresh_token
         }, headers = self.get_token_headers())
@@ -336,17 +346,11 @@ class SpotifyClient:
         response = await requests_async.get(endpoint, params = params, headers = self.get_headers())
 
         if response.status_code == 401:
-            authorized = await self.async_refresh_token()
+            self.refresh_token()
 
-            if authorized:
-                response = await requests_async.get(endpoint, params = params, headers=self.get_headers())
-            else:
-                response = {
-                    'error': 'unauthorized',
-                    'error_message': 'User is unauthorized'
-                }
+            response = await requests_async.get(endpoint, params = params, headers=self.get_headers())
 
-        return response
+        return response.json() if response.status_code != 204 else {}
 
     async def async_put(self, endpoint, data = {}, params = {}):
         data = json.dumps(data)
@@ -354,17 +358,11 @@ class SpotifyClient:
         response = await requests_async.put(endpoint, params = params, data = data, headers = self.get_headers())
 
         if response.status_code == 401:
-            authorized = await self.async_refresh_token()
+            self.refresh_token()
 
-            if authorized:
-                response = await requests_async.put(endpoint, params = data, headers = self.get_headers())
-            else:
-                response = {
-                    "error": "unauthorized",
-                    "error_message": "User is unauthorized"
-                }
+            response = await requests_async.put(endpoint, params = data, headers = self.get_headers())
 
-        return response
+        return response.json() if response.status_code != 204 else {}
 
     async def async_post(self, endpoint, data = {}, params = {}):
         data = json.dumps(data)
@@ -372,33 +370,21 @@ class SpotifyClient:
         response = await requests_async.post(endpoint, data = data, params = params, headers = self.get_headers())
 
         if response.status_code == 401:
-            authorized = await self.async_refresh_token()
+            self.refresh_token()
 
-            if authorized:
-                response = await requests_async.post(endpoint, data = data, params = params, headers = self.get_headers())
-            else:
-                response = {
-                    'error': 'unauthorized',
-                    'error_message': 'User is unauthorized'
-                }
+            response = await requests_async.post(endpoint, data = data, params = params, headers = self.get_headers())
 
-        return response
+        return response.json() if response.status_code != 204 else {}
 
     def get(self, endpoint, params = {}):
         response = requests.get(endpoint, params = params, headers = self.get_headers())
 
         if response.status_code == 401:
-            authorized = self.async_refresh_token()
+            self.refresh_token()
 
-            if authorized:
-                response = requests.get(endpoint, params = params, headers=self.get_headers())
-            else:
-                response = {
-                    'error': 'unauthorized',
-                    'error_message': 'User is unauthorized'
-                }
+            response = requests.get(endpoint, params = params, headers=self.get_headers())
 
-        return response
+        return response.json() if response.status_code != 204 else {}
 
     def put(self, endpoint, data = {}, params = {}):
         data = json.dumps(data)
@@ -406,17 +392,11 @@ class SpotifyClient:
         response = requests.put(endpoint, params = params, data = data, headers = self.get_headers())
 
         if response.status_code == 401:
-            authorized = self.async_refresh_token()
+            self.refresh_token()
 
-            if authorized:
-                response = requests.put(endpoint, params = data, headers = self.get_headers())
-            else:
-                response = {
-                    "error": "unauthorized",
-                    "error_message": "User is unauthorized"
-                }
+            response = requests.put(endpoint, params = data, headers = self.get_headers())
 
-        return response
+        return response.json() if response.status_code != 204 else {}
 
     def post(self, endpoint, data = {}):
         data = json.dumps(data)
@@ -424,34 +404,20 @@ class SpotifyClient:
         response = requests.post(endpoint, data = data, headers = self.get_headers())
 
         if response.status_code == 401:
-            authorized = self.async_refresh_token()
+            self.refresh_token()
 
-            if authorized:
-                response = requests.post(endpoint, data = data, headers = self.get_headers())
-            else:
-                response = {
-                    'error': 'unauthorized',
-                    'error_message': 'User is unauthorized'
-                }
+            response = requests.post(endpoint, data = data, headers = self.get_headers())
 
-        return response
+        return response.json() if response.status_code != 204 else {}
 
     def delete(self, endpoint, params = {}):
-        data = json.dumps(params)
-
         response = requests.delete(endpoint, params = params, headers = self.get_headers())
 
         if response.status_code == 401:
-            authorized = self.async_refresh_token()
+            self.refresh_token()
 
-            if authorized:
-                response = requests.delete(endpoint, params = params, headers = self.get_headers())
-            else:
-                response = {
-                    'error': 'unauthorized',
-                    'error_message': 'User is unauthorized'
-                }
+            response = requests.delete(endpoint, params = params, headers = self.get_headers())
 
-        return response
+        return response.json() if response.status_code != 204 else {}
 
     #endregion

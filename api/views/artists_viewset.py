@@ -15,7 +15,7 @@ class ArtistsViewset(APIView):
 
         artist = client.get_artist({
             "artist_id": artist_id
-        }).json()
+        })
 
         artist = helpers.add_saved_status_to_collection(client, [artist], "artist")[0]
         # artist = helpers.add_artists_to_collection(client, artist)

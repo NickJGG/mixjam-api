@@ -15,7 +15,7 @@ class ArtistsSimilarViewset(APIView):
 
         artists = client.get_artists_similar({
             "artist_id": artist_id
-        }).json()["artists"]
+        })
 
         artists = helpers.add_saved_status_to_collection(client, artists, "artist")
         

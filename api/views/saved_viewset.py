@@ -20,7 +20,6 @@ class SavedViewSet(APIView):
             "type": type,
             "limit": limit
         })
-        rec = rec.json()
 
         if type in rec:
             rec = rec[type]

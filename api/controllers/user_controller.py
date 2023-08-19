@@ -56,13 +56,13 @@ class UserController(BaseController):
         return self.create_message(data)
     
     async def join_party(self, message):
-        data = {
-            "joined": False
-        }
+        data = {}
 
         party_code = message.get("party_code", "")
 
         party = Party.objects.filter(code=party_code)
+
+        print("join_party:", party.exists())
 
         if party.exists():
             party = party.first()
@@ -71,6 +71,7 @@ class UserController(BaseController):
             data["join_party"] = can_join
 
             if can_join:
+                party.join(self.user)
                 data["party"] = PartySerializer(party).data
 
         return data

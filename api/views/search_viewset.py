@@ -22,7 +22,6 @@ class SearchViewSet(APIView):
             "limit": limit,
             "type": type
         })
-        rec = rec.json()
 
         if "errors" not in rec:
             for key, val in rec.items():
