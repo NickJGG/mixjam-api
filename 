@@ -1,0 +1,137 @@
+[1mdiff --git a/api/__pycache__/spotify_client.cpython-38.pyc b/api/__pycache__/spotify_client.cpython-38.pyc[m
+[1mindex ebdbbd2..3807fb6 100644[m
+Binary files a/api/__pycache__/spotify_client.cpython-38.pyc and b/api/__pycache__/spotify_client.cpython-38.pyc differ
+[1mdiff --git a/api/controllers/party_controller.py b/api/controllers/party_controller.py[m
+[1mindex ff62edb..539b04b 100644[m
+[1m--- a/api/controllers/party_controller.py[m
+[1m+++ b/api/controllers/party_controller.py[m
+[36m@@ -173,7 +173,9 @@[m [mclass PartyController(BaseController):[m
+                 "context_uri": self.party.context_uri,[m
+             })[m
+         [m
+[31m-        if not self.party.playing:[m
+[32m+[m[32m        if self.party.playing:[m
+[32m+[m[32m            self.client.play({})[m
+[32m+[m[32m        else:[m
+             self.client.pause({})[m
+ [m
+         await self.client.async_seek({[m
+[1mdiff --git a/api/spotify_client.py b/api/spotify_client.py[m
+[1mindex e89e0d3..e8b45f0 100644[m
+[1m--- a/api/spotify_client.py[m
+[1m+++ b/api/spotify_client.py[m
+[36m@@ -350,8 +350,6 @@[m [mclass SpotifyClient:[m
+ [m
+             response = await requests_async.get(endpoint, params = params, headers=self.get_headers())[m
+ [m
+[31m-        print(response)[m
+[31m-[m
+         return response.json() if response.status_code != 204 else {}[m
+ [m
+     async def async_put(self, endpoint, data = {}, params = {}):[m
+[36m@@ -364,8 +362,6 @@[m [mclass SpotifyClient:[m
+ [m
+             response = await requests_async.put(endpoint, params = data, headers = self.get_headers())[m
+ [m
+[31m-        print(response)[m
+[31m-[m
+         return response.json() if response.status_code != 204 else {}[m
+ [m
+     async def async_post(self, endpoint, data = {}, params = {}):[m
+[36m@@ -378,8 +374,6 @@[m [mclass SpotifyClient:[m
+ [m
+             response = await requests_async.post(endpoint, data = data, params = params, headers = self.get_headers())[m
+ [m
+[31m-        print(response)[m
+[31m-[m
+         return response.json() if response.status_code != 204 else {}[m
+ [m
+     def get(self, endpoint, params = {}):[m
+[36m@@ -390,8 +384,6 @@[m [mclass SpotifyClient:[m
+ [m
+             response = requests.get(endpoint, params = params, headers=self.get_headers())[m
+ [m
+[31m-        print(response)[m
+[31m-[m
+         return response.json() if response.status_code != 204 else {}[m
+ [m
+     def put(self, endpoint, data = {}, params = {}):[m
+[36m@@ -404,8 +396,6 @@[m [mclass SpotifyClient:[m
+ [m
+             response = requests.put(endpoint, params = data, headers = self.get_headers())[m
+ [m
+[31m-        print(response)[m
+[31m-[m
+         return response.json() if response.status_code != 204 else {}[m
+ [m
+     def post(self, endpoint, data = {}):[m
+[36m@@ -418,8 +408,6 @@[m [mclass SpotifyClient:[m
+ [m
+             response = requests.post(endpoint, data = data, headers = self.get_headers())[m
+ [m
+[31m-        print(response)[m
+[31m-[m
+         return response.json() if response.status_code != 204 else {}[m
+ [m
+     def delete(self, endpoint, params = {}):[m
+[36m@@ -430,8 +418,6 @@[m [mclass SpotifyClient:[m
+ [m
+             response = requests.delete(endpoint, params = params, headers = self.get_headers())[m
+ [m
+[31m-        print(response)[m
+[31m-[m
+         return response.json() if response.status_code != 204 else {}[m
+ [m
+     #endregion[m
+[1mdiff --git a/api/views/connect_spotify_viewset.py b/api/views/connect_spotify_viewset.py[m
+[1mindex 3b74b54..1e4f0f4 100644[m
+[1m--- a/api/views/connect_spotify_viewset.py[m
+[1m+++ b/api/views/connect_spotify_viewset.py[m
+[36m@@ -7,6 +7,7 @@[m [mfrom rest_framework.permissions import IsAuthenticated[m
+ from rest_framework.views import APIView[m
+ from rest_framework.response import Response[m
+ [m
+[32m+[m[32mfrom api.serializers import UserSerializer[m
+ from api.spotify_client import SpotifyClient[m
+ [m
+ client_id = os.environ.get('CLIENT_ID')[m
+[36m@@ -42,6 +43,7 @@[m [mclass ConnectSpotify(APIView):[m
+ [m
+             try:[m
+                 response = response.json()[m
+[32m+[m[32m                print(response)[m
+ [m
+                 access_token = response['access_token'][m
+                 refresh_token = response['refresh_token'][m
+[36m@@ -56,7 +58,8 @@[m [mclass ConnectSpotify(APIView):[m
+                 request.user.profile.save()[m
+ [m
+                 return Response({[m
+[31m-                    'success': True[m
+[32m+[m[32m                    'success': True,[m
+[32m+[m[32m                    'user': UserSerializer(request.user).data[m
+                 })[m
+             except Exception as e:[m
+                 request.user.profile.authorized = False[m
+[1mdiff --git a/frontend b/frontend[m
+[1m--- a/frontend[m
+[1m+++ b/frontend[m
+[36m@@ -1 +1 @@[m
+[31m-Subproject commit 95d4dc460b4de28670a1908d64e75f2877b1eec9[m
+[32m+[m[32mSubproject commit 95d4dc460b4de28670a1908d64e75f2877b1eec9-dirty[m
+[1mdiff --git a/mixjam/__pycache__/settings.cpython-38.pyc b/mixjam/__pycache__/settings.cpython-38.pyc[m
+[1mindex a4ba6a4..2c77652 100644[m
+Binary files a/mixjam/__pycache__/settings.cpython-38.pyc and b/mixjam/__pycache__/settings.cpython-38.pyc differ
+[1mdiff --git a/mixjam/settings.py b/mixjam/settings.py[m
+[1mindex d6e5d95..7624ad9 100644[m
+[1m--- a/mixjam/settings.py[m
+[1m+++ b/mixjam/settings.py[m
+[36m@@ -15,7 +15,7 @@[m [mimport dj_database_url[m
+ import django_heroku[m
+ [m
+ from dotenv import load_dotenv[m
+[31m-load_dotenv()[m
+[32m+[m[32mload_dotenv(override=True)[m
+ [m
+ # Build paths inside the project like this: os.path.join(BASE_DIR, ...)[m
+ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))[m

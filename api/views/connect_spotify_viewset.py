@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+from api.serializers import UserSerializer
 from api.spotify_client import SpotifyClient
 
 client_id = os.environ.get('CLIENT_ID')
@@ -56,7 +57,8 @@ class ConnectSpotify(APIView):
                 request.user.profile.save()
 
                 return Response({
-                    'success': True
+                    'success': True,
+                    'user': UserSerializer(request.user).data
                 })
             except Exception as e:
                 request.user.profile.authorized = False

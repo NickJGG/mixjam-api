@@ -173,7 +173,9 @@ class PartyController(BaseController):
                 "context_uri": self.party.context_uri,
             })
         
-        if not self.party.playing:
+        if self.party.playing:
+            self.client.play({})
+        else:
             self.client.pause({})
 
         await self.client.async_seek({
