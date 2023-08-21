@@ -274,7 +274,7 @@ class SpotifyClient:
         return self.get(ENDPOINTS[f"saved_{ type }"].format(user_id=self.user.profile.spotify_username), params=data)
 
     def get_new_releases(self, data):
-        return self.get(ENDPOINTS['new_releases'], params = data).get("albums", []).get("items", [])
+        return self.get(ENDPOINTS['new_releases'], params = data).get("albums", {}).get("items", [])
 
     def get_profile(self):
         return self.get(ENDPOINTS["profile"])

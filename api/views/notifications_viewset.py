@@ -76,15 +76,18 @@ class NotificationsViewSet(APIView):
             spotify_client = SpotifyClient(sender)
             current_state = spotify_client.get_state({})
 
-            track = current_state.get("item")
-            track_uri = track.get("uri")
-            context = current_state.get("context")
-            context_uri = context.get("uri")
+            track = current_state.get("item", "")
 
-            new_party.play_track({
-                "track_uri": track_uri,
-                "context_uri": context_uri,
-            })
+            if track != "":
+                track_uri = track.get("uri", "")
+                context = current_state.get("context", "")
+                context_uri = context.get("uri", "")
+
+                if track_uri != "" and context_uri != "":
+                    new_party.play_track({
+                        "track_uri": track_uri,
+                        "context_uri": context_uri,
+                    })
 
             response_data["join_party"] = True
             response_data["party"] = PartySerializer(new_party).data
