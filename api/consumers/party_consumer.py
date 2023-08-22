@@ -51,6 +51,13 @@ class PartyConsumer(AsyncWebsocketConsumer):
 
         response_message = await PartyController(user, party).handle_message(message)
 
+        respond = response_message.get("data", {}).get("respond", None)
+
+        print(response_message.get("data", {}))
+
+        if respond is not None and respond == False:
+            return
+
         await self.group_send(response_message)
     
     async def response(self, message):

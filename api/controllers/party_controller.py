@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from api.spotify_client import SpotifyClient
 from api.serializers import PartySerializer
 
@@ -64,7 +66,7 @@ class PartyController(BaseController):
 
         action = response.get("action")
         current_state = None
-        update_party_uris = action == PlaybackAction.TRACK_END and self.party.ending
+        #update_party_uris = action == PlaybackAction.TRACK_END and self.party.track_ending and self.party.track_ender == self.user
 
         if action in PlaybackAction.ALL:
             playback_response = await PlaybackController(self.user).handle_response(response, get_state=True)
@@ -73,14 +75,6 @@ class PartyController(BaseController):
                 **response,
                 **playback_response["data"],
             }
-
-            if update_party_uris:
-                current_state = response.get("playback")
-                track_uri = current_state.get("item").get("uri")
-
-                self.party.play_track({
-                    "track_uri": track_uri,
-                })
 
             if action not in PlaybackAction.REQUIRES_NO_SYNC:
                 await self.partial_sync()
@@ -108,8 +102,29 @@ class PartyController(BaseController):
         action = request.get("action")
         party_action = self.playback_actions.get(action, None)
         
+        party_request = deepcopy(request)
+
+        if action == PlaybackAction.TRACK_END:
+            party_request["track_ender"] = self.user
+
         if party_action is not None:
-            party_action(request)
+            party_response = party_action(party_request)
+
+            print(party_response)
+
+            if action == PlaybackAction.TRACK_END and "respond" in party_response:
+                respond = party_response["respond"]
+
+                request["respond"] = respond
+
+                if respond:
+                    current_state = self.client.get_state({})
+
+                    track_uri = current_state.get("item").get("uri")
+
+                    self.party.play_track({
+                        "track_uri": track_uri,
+                    })
 
         return await PlaybackController(self.user).handle_request(request)
 

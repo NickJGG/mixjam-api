@@ -18,7 +18,7 @@ class PartyMode(models.Model):
 class Party(models.Model):
     code = models.CharField(primary_key=True, max_length=30, default="default")
     mode = models.CharField(max_length=50, choices=PartyMode.MODE_CHOICES, default=PartyMode.PRIVATE)
-    creator = models.ForeignKey(User, on_delete=models.CASCADE)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name="creator")
 
     users = models.ManyToManyField(User, blank=True, related_name="party_users")
     allowed_users = models.ManyToManyField(User, blank=True, related_name="party_allowed_users")
@@ -34,7 +34,8 @@ class Party(models.Model):
     track_last_end = models.DateTimeField(null=True, blank=True)
 
     playing = models.BooleanField(default=False, blank=True)
-    ending = models.BooleanField(default=False, blank=True)
+    track_ending = models.BooleanField(default=False, blank=True)
+    track_ender = models.ForeignKey(User, blank=True, null=True, on_delete=models.DO_NOTHING, related_name="track_ender")
 
     time_created = models.DateTimeField(auto_now_add=True, null=True)
 
@@ -121,21 +122,32 @@ class Party(models.Model):
         self.end_track(args)
 
     def end_track(self, args):
-        self.ending = False
+        self.track_ending = False
         self.track_progress_ms = 0
+        self.track_ender = None
         self.play(args)
 
     def track_end(self, args):
-        if self.ending:
-            return False
+        if self.track_ending:
+            return {
+                "respond": False,
+            }
 
         ending_track_uri = args.get("track_uri")
+        track_ender = args.get("track_ender")
 
         if self.track_uri == ending_track_uri:
-            self.ending = True
+            self.track_ending = True
+            self.track_ender = track_ender
             self.save()
 
-            return True
+            return {
+                "respond": True,
+            }
+
+        return {
+            "respond": False,
+        }
 
     def seek(self, args):
         self.track_progress_ms = args.get("progress_ms")
